@@ -24,19 +24,11 @@ char* fgets(char* buf, int max, int fd) {
 
 void uniq(int fd) {
   char buffer[1024];
-  char curr_buf[1024];
-  int line_num = 0;
+  char curr_buf[1024] = {0};
   while(fgets(buffer, sizeof(buffer), fd) != NULL) {
-    line_num++;	  
-    if(line_num == 1) {
+    if(strcmp(curr_buf, buffer) != 0) {
       strcpy(curr_buf, buffer);
-      printf("%s", buffer);
-    }
-    else {
-      if(strcmp(curr_buf, buffer) != 0) {
-        strcpy(curr_buf, buffer);
-        printf("%s", buffer);
-      }
+      printf("%s", curr_buf);
     }      
   }
   return;
@@ -47,6 +39,7 @@ int main(int argc, char* argv[])
   int fd;
   if(argc == 1) {
     printf("Reading from Standard Input...\n");
+    uniq(0);
   }
   else if(argc > 1) {
     for(int i = 1; i < argc; i++) {
