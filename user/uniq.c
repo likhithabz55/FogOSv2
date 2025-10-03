@@ -13,6 +13,7 @@ struct uniq_options {
   int skip_chars;
 }; 
 
+//helper function similar to gets to read lines from file to a buffer
 char* fgets(char* buf, int max, int fd) {
   memset(buf, 0, max);  // fill buffer with zeros
   int i, cc = 0;
@@ -32,6 +33,7 @@ char* fgets(char* buf, int max, int fd) {
   return buf;
 }
 
+//helper function to convert characters to lowercase
 char to_lower(char c) {
   if (c >= 'A' && c <= 'Z') {
      return c - 'A' + 'a';
@@ -39,6 +41,7 @@ char to_lower(char c) {
   return c;
 }
 
+//helper function similar to strcmp, but considers ignore case, skip-chars options
 int equals(char *str1, char * str2, struct uniq_options *flags) {
   int n = flags->skip_chars;
   if( n >= strlen(str1) && n >= strlen(str2)) {
@@ -56,6 +59,7 @@ int equals(char *str1, char * str2, struct uniq_options *flags) {
   return (uchar)str1[n] - (uchar)str2[n];  	  
 }	
 
+//helper function to compare strings upto n characters
 int strncmp(char *str1, char *str2, int n) {
   int x = 0;
   while(x < n && *str1 && *str1 == *str2) {
@@ -68,62 +72,56 @@ int strncmp(char *str1, char *str2, int n) {
   return (uchar)*str1 - (uchar)*str2;
 }  
 
-/*Implementation of uniq
-command*/
+//prints for different flags
+void print_line(const char *line, int count, struct uniq_options *flags)
+{
+  if (flags->count_lines == 1) {
+     printf("%d %s", count, line);
+  }
+  else if(flags->print_unique == 1) {
+     if (count == 1) {
+        printf("%s", line);
+     }	
+  }
+  else if (flags->dup_lines == 1 || flags->print_all_dup_lines == 1) {
+     if (count > 1) {
+        printf("%s", line);
+     }
+  }
+  else {
+    printf("%s", line);
+  }
+}	
+
+//uniq function implementation
 void uniq(int fd, struct uniq_options *flags) {
   char buffer[1024];
   char curr_buf[1024] = {0};
   int count = 0;
-  if(fgets(buffer, sizeof(buffer), fd) != NULL)
+  if (fgets(buffer, sizeof(buffer), fd) == NULL)
+    return;
+  
+  strcpy(curr_buf, buffer);
+  count++;
+  while (fgets(buffer, sizeof(buffer), fd) != NULL)
   {
-    strcpy(curr_buf, buffer);
-    count++;
-  }    
-  while(fgets(buffer, sizeof(buffer), fd) != NULL) {
-    if(equals(curr_buf, buffer, flags) != 0) {
-       if(flags->count_lines == 1) {
-	 printf("%d %s", count, curr_buf);
-       }
-       else if(flags->print_unique == 1) {
-	 if(count == 1)
-	   printf("%s", curr_buf);
-       }  	 
-       else if(flags->dup_lines == 1 || flags->print_all_dup_lines == 1) {
-	 if( count > 1)
-           printf("%s", curr_buf);
-       }	 
-       else {
-	 printf("%s", curr_buf);
-       }	 
+    if (equals(curr_buf, buffer, flags) == 0) {
+       if (flags->print_all_dup_lines == 1) {
+          printf("%s", curr_buf);
+       }	    
+       count++;
+    }
+    else {
+       print_line(curr_buf, count, flags);
        strcpy(curr_buf, buffer);
        count = 1;
     }
-    else {
-      count++;
-      if(flags->print_all_dup_lines == 1) {
-	printf("%s", curr_buf);
-      }	
-    }	  
-  }	      
-  if(flags->count_lines == 1) {
-    printf("%d %s", count, curr_buf);
   }
-  else if(flags->dup_lines == 1 || flags->print_all_dup_lines == 1) {
-    if( count > 1)
-      printf("%s", curr_buf);
-  }
-  else if(flags->print_unique == 1) {
-    if(count == 1)
-      printf("%s", curr_buf);
-  }
-  else {
-    printf("%s", curr_buf);
-  }
-  return;
-} 
+  print_line(curr_buf, count, flags);  
+}	
 
+//Helper function to convert string to int
 int parseInt(char* s) {
-  printf("s inside val : %s\n", s);	
   if (s == 0 || *s == '\0') {
      return -1;
   }
@@ -133,7 +131,6 @@ int parseInt(char* s) {
       return -1;
     }
     n = n*10 + s[j] - '0';
-    printf("parseInt n : %d\n", n);    
   }
   return n;
 }	
@@ -156,7 +153,6 @@ struct uniq_options* parseFlags(int argc, char *argv[], int i, struct uniq_optio
   }
   else if(strncmp(argv[i], "--skip-chars=", 13) == 0) {
     int val = parseInt(&argv[i][13]);
-    printf("num chars val : %d\n", val);
     if( val < 0 ) {
       printf("Missing bytes\n");
       return NULL;
@@ -166,7 +162,6 @@ struct uniq_options* parseFlags(int argc, char *argv[], int i, struct uniq_optio
   else if(strcmp(argv[i], "-s") == 0) {
     if(++i < argc) {
       int val = parseInt(argv[i]);
-      printf("val : %d\n", val);
       if( val < 0 ) {
 	printf("Missing bytes\n");
         return NULL;	
@@ -188,19 +183,12 @@ struct uniq_options* parseFlags(int argc, char *argv[], int i, struct uniq_optio
 int main(int argc, char* argv[])
 {
   int fd;
-  struct uniq_options flags;
-  flags.count_lines = 0;
-  flags.dup_lines = 0;
-  flags.print_all_dup_lines = 0;
-  flags.ignore_case = 0;
-  flags.skip_chars = 0;
+  struct uniq_options flags = {0};
   int i = 1;
-  while(i < argc) {
+  for(; i < argc; i++) {
      if(argv[i][0] == '-') {
-       if(parseFlags(argc, argv, i, &flags) == NULL)
-         break;
+       if(parseFlags(argc, argv, i, &flags) == NULL) break;
        if(flags.skip_chars > 0 && (strcmp(argv[i], "-s") == 0)) i++;
-       i++;
      }
      else break;
   }
@@ -215,6 +203,5 @@ int main(int argc, char* argv[])
     uniq(fd, &flags);
     close(fd);
   }
-  
   exit(0);  
 }	
