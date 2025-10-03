@@ -14,7 +14,7 @@ struct uniq_options {
   int skip_chars;
 }; 
 
-//helper function similar to gets to read lines from file to a buffer
+/*Reads each line from file to a buffer*/
 char* fgets(char* buf, int max, int fd) {
   memset(buf, 0, max);  // fill buffer with zeros
   int i, cc = 0;
@@ -27,6 +27,10 @@ char* fgets(char* buf, int max, int fd) {
       break;
     }
   }
+  if(i == max - 1 && buf[i-1] != '\n' && buf[i-1] != '\r') {
+    printf("uniq : line too long\n");
+    return NULL;
+  }    
   if(i == 0 && cc <= 0) {
     return NULL;
   }    
@@ -34,7 +38,7 @@ char* fgets(char* buf, int max, int fd) {
   return buf;
 }
 
-//helper function to convert characters to lowercase
+/* converts characters to lowercase*/
 char to_lower(char c) {
   if (c >= 'A' && c <= 'Z') {
      return c - 'A' + 'a';
@@ -42,7 +46,7 @@ char to_lower(char c) {
   return c;
 }
 
-//helper function similar to strcmp, but considers ignore case, skip-chars options
+/*Compares two strings, byte by byte, considers ignore case and skip-chars options*/
 int equals(char *str1, char * str2, struct uniq_options *flags) {
   int n = flags->skip_chars;
   if( n >= strlen(str1) && n >= strlen(str2)) {
@@ -60,7 +64,7 @@ int equals(char *str1, char * str2, struct uniq_options *flags) {
   return (uchar)str1[n] - (uchar)str2[n];  	  
 }	
 
-//helper function to compare strings upto n characters
+/*compares two strings until the first n characters*/
 int strncmp(char *str1, char *str2, int n) {
   int x = 0;
   while (x < n && *str1 && *str1 == *str2) {
@@ -73,7 +77,7 @@ int strncmp(char *str1, char *str2, int n) {
   return (uchar)*str1 - (uchar)*str2;
 }  
 
-//prints for different flags
+/*Prints output based on the flags that are active*/
 void print_line(const char *line, int count, struct uniq_options *flags)
 {
   if (flags->count_lines == 1 && flags->dup_lines == 1) {
@@ -104,7 +108,11 @@ void print_line(const char *line, int count, struct uniq_options *flags)
   }
 }	
 
-//uniq function implementation
+/* Implementation of uniq
+ * Reads each line from the file and compares it with
+ * its preceeding line and prints only the first occurence 
+ * of the line.
+ * Outputs may vary based on the input flags like -d, -D, -u*/
 void uniq(int fd, struct uniq_options *flags) {
   char buffer[BUF_SIZE];
   char curr_buf[BUF_SIZE] = {0};
@@ -132,7 +140,9 @@ void uniq(int fd, struct uniq_options *flags) {
 }
 
 
-//Helper function to convert string to int
+/*Helper function to convert string to int
+ * return -1 for illegal input formats
+ * like abc or if special characters are present*/
 int parseInt(char* s) {
   if (s == 0 || *s == '\0') {
      return -1;
@@ -147,7 +157,8 @@ int parseInt(char* s) {
   return n;
 }	
 
-//parses flags from command line 
+/*Parses flags from command line and makes the corresponding fields active
+ * in the struct flags*/ 
 struct uniq_options* parseFlags(int argc, char *argv[], int i, struct uniq_options *flags) {
   if((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--count") == 0)) {
     flags->count_lines = 1;
