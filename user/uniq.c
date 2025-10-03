@@ -3,7 +3,7 @@
 #include "user/user.h"
 
 #define NULL (void*)0
-#define BUF_SIZE 512
+#define BUF_SIZE 1024
 
 struct uniq_options {
   int count_lines;
@@ -130,7 +130,7 @@ void uniq(int fd, struct uniq_options *flags) {
   }
   print_line(curr_buf, count, flags);  
 }
-  	
+
 
 //Helper function to convert string to int
 int parseInt(char* s) {
