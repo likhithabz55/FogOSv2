@@ -22,38 +22,38 @@ Are you ok?
 Build process :
 
 Step 1 :
-Run 'make qemu'
+- Run 'make qemu'
 
 Step 2 :
-Try running uniq with different options
+- Try running uniq with different options
 
-#Default Implementation : reads from stdin, prints to stdout without adjacent duplicates.
-uniq
+- Default Implementation : reads from stdin, prints to stdout without adjacent duplicates.
+  - uniq
 
-#Default Implementation : reads from input file and prints to stdout without adjacent duplicates
-uniq <file>
+- Default Implementation : reads from input file and prints to stdout without adjacent duplicates
+  - uniq <file>
 
-#prints number of duplicate lines, followed by the line.
-uniq -c <file>
-uniq --count <file>
+- prints number of duplicate lines, followed by the line.
+  - uniq -c <file>
+  - uniq --count <file>
 
-#prints one instance of each duplicated line
-uniq -d <file>
-uniq --repeated <file>
+- prints one instance of each duplicated line
+  - uniq -d <file>
+  - uniq --repeated <file>
 
-#prints all duplicate lines
-uniq -D <file>
+- prints all duplicate lines
+  - uniq -D <file>
 
-#ignores case of characters while comparing two lines and prints the output
-uniq -i <file>
-uniq --ignore-case <file>
+- ignores case of characters while comparing two lines and prints the output
+  - uniq -i <file>
+  - uniq --ignore-case <file>
 
-#prints only the uniq lines
-uniq -u <file>
+- prints only the uniq lines
+  - uniq -u <file>
 
-#ignores the first N characters while comparing and prints the output
-uniq -s N <file>
-uniq --skip-chars=N <file>
+- ignores the first N characters while comparing and prints the output
+  - uniq -s N <file>
+  - uniq --skip-chars=N <file>
 
 We can also combine different flags and the output will reflect the combined behaviour of both flags.
 Please look at the below examples.
