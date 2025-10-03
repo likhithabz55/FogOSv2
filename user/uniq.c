@@ -3,6 +3,7 @@
 #include "user/user.h"
 
 #define NULL (void*)0
+#define BUF_SIZE 512
 
 struct uniq_options {
   int count_lines;
@@ -62,11 +63,11 @@ int equals(char *str1, char * str2, struct uniq_options *flags) {
 //helper function to compare strings upto n characters
 int strncmp(char *str1, char *str2, int n) {
   int x = 0;
-  while(x < n && *str1 && *str1 == *str2) {
+  while (x < n && *str1 && *str1 == *str2) {
     str1++, str2++;
     x++;
   }
-  if(x == n) {
+  if (x == n) {
     return 0;
   }    
   return (uchar)*str1 - (uchar)*str2;
@@ -75,8 +76,18 @@ int strncmp(char *str1, char *str2, int n) {
 //prints for different flags
 void print_line(const char *line, int count, struct uniq_options *flags)
 {
-  if (flags->count_lines == 1) {
-     printf("%d %s", count, line);
+  if (flags->count_lines == 1 && flags->dup_lines == 1) {
+    if (count > 1) {
+       printf("%d %s", count, line); 
+    }
+  }
+  else if (flags->count_lines == 1 && flags->print_unique == 1) {
+    if (count == 1) {
+       printf("%d %s", count, line);
+    }
+  }  
+  else if (flags->count_lines == 1) {
+       printf("%d %s", count, line);
   }
   else if(flags->print_unique == 1) {
      if (count == 1) {
@@ -95,8 +106,8 @@ void print_line(const char *line, int count, struct uniq_options *flags)
 
 //uniq function implementation
 void uniq(int fd, struct uniq_options *flags) {
-  char buffer[1024];
-  char curr_buf[1024] = {0};
+  char buffer[BUF_SIZE];
+  char curr_buf[BUF_SIZE] = {0};
   int count = 0;
   if (fgets(buffer, sizeof(buffer), fd) == NULL)
     return;
@@ -107,7 +118,7 @@ void uniq(int fd, struct uniq_options *flags) {
   {
     if (equals(curr_buf, buffer, flags) == 0) {
        if (flags->print_all_dup_lines == 1) {
-          printf("%s", curr_buf);
+          printf("%s", buffer);
        }	    
        count++;
     }
@@ -118,7 +129,8 @@ void uniq(int fd, struct uniq_options *flags) {
     }
   }
   print_line(curr_buf, count, flags);  
-}	
+}
+  	
 
 //Helper function to convert string to int
 int parseInt(char* s) {
@@ -135,6 +147,7 @@ int parseInt(char* s) {
   return n;
 }	
 
+//parses flags from command line 
 struct uniq_options* parseFlags(int argc, char *argv[], int i, struct uniq_options *flags) {
   if((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--count") == 0)) {
     flags->count_lines = 1;
@@ -188,14 +201,24 @@ int main(int argc, char* argv[])
   for(; i < argc; i++) {
      if(argv[i][0] == '-') {
        if(parseFlags(argc, argv, i, &flags) == NULL) break;
-       if(flags.skip_chars > 0 && (strcmp(argv[i], "-s") == 0)) i++;
+       else if(flags.skip_chars > 0 && (strcmp(argv[i], "-s") == 0)) i++;
      }
      else break;
   }
-  if(i == argc) {
+  if (flags.count_lines == 1 && flags.print_all_dup_lines == 1) {
+     printf("uniq: printing all duplicated lines and repeat counts is meaningless\n");
+     exit(0);
+  }
+  else if(flags.print_unique == 1 && (flags.dup_lines == 1 || flags.print_all_dup_lines == 1)) {
+     exit(0);
+  }
+  else if(flags.dup_lines == 1 && flags.print_all_dup_lines == 1) {
+     exit(0);
+  }     
+  if (i == argc) {
     uniq(0, &flags);
   }
-  else if((fd = open(argv[i], O_RDONLY)) < 0) {
+  else if ((fd = open(argv[i], O_RDONLY)) < 0) {
     printf("No such File or directory!!\n");
     exit(1);
   }
